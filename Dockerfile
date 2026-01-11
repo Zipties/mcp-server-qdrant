@@ -54,7 +54,9 @@ EXPOSE 8000
 # Set environment variables with defaults that can be overridden at runtime
 ENV QDRANT_URL=""
 ENV QDRANT_API_KEY=""
-ENV COLLECTION_NAME="default-collection"
+# NOTE: COLLECTION_NAME intentionally left unset to expose collection_name parameter in tool schema
+# If set, make_partial_function strips collection_name from schema, preventing multi-collection use
+# ENV COLLECTION_NAME=""
 ENV EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 
 # Run the already-installed package (STDIO mode by default)

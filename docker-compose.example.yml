@@ -1,0 +1,92 @@
+# Example Docker Compose for mcp-server-qdrant with Streamable HTTP transport
+# For Claude Custom Connector, Claude Desktop, or other MCP clients
+#
+# Usage:
+#   cp docker-compose.example.yml docker-compose.yml
+#   # Edit environment variables as needed
+#   docker compose up -d
+
+version: "3.8"
+
+services:
+  qdrant-mcp:
+    image: ghcr.io/zipties/mcp-server-qdrant:latest
+    # Or build locally:
+    # build: .
+    command:
+      - "uv"
+      - "run"
+      - "mcp-server-qdrant"
+      - "--transport"
+      - "streamable-http"
+    ports:
+      - "8000:8000"
+    environment:
+      # FastMCP HTTP settings
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=8000
+      - FASTMCP_LOG_LEVEL=INFO
+      # Parse JSON arguments for complex types (recommended)
+      - FASTMCP_TOOL_ATTEMPT_PARSE_JSON_ARGS=true
+
+      # Qdrant connection
+      - QDRANT_URL=http://qdrant:6333
+      # - QDRANT_API_KEY=your-api-key  # If using Qdrant Cloud
+
+      # IMPORTANT: Leave COLLECTION_NAME empty to expose collection_name parameter
+      # This allows clients to specify which collection to use for each operation
+      # If set, the parameter is hidden and all operations use the default collection
+      - COLLECTION_NAME=
+
+      # Enable arbitrary filters (for advanced queries)
+      - QDRANT_ALLOW_ARBITRARY_FILTER=true
+
+      # Embedding provider options:
+      # Option 1: FastEmbed (default, runs locally)
+      # - EMBEDDING_PROVIDER=fastembed
+      # - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+
+      # Option 2: OpenAI
+      # - EMBEDDING_PROVIDER=openai
+      # - OPENAI_API_KEY=sk-...
+
+      # Option 3: OpenAI-compatible (e.g., local embedding server)
+      - EMBEDDING_PROVIDER=openai-compatible
+      - EMBEDDING_BASE_URL=http://embedding-server:7997
+      - EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
+      - EMBEDDING_VECTOR_SIZE=1024
+      - EMBEDDING_API_KEY=your-api-key
+
+      # Optional: Reranking for improved search relevance
+      - RERANKER_ENABLED=true
+      - RERANKER_URL=http://reranker-server:7997/rerank
+      - RERANKER_API_KEY=your-api-key
+      - RERANKER_CANDIDATE_POOL_SIZE=30
+      - RERANKER_TOP_K=8
+
+      # Custom tool descriptions (optional - useful for guiding LLM usage)
+      # - TOOL_FIND_DESCRIPTION=Search collections. Use collections: ['*'] to search all.
+      # - TOOL_STORE_DESCRIPTION=Store information. You MUST specify collection_name.
+
+    # Connect to your Qdrant instance
+    # networks:
+    #   - your-network
+
+    restart: unless-stopped
+
+  # Optional: Include Qdrant for a complete setup
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - qdrant_storage:/qdrant/storage
+  #   restart: unless-stopped
+
+# volumes:
+#   qdrant_storage:
+
+# networks:
+#   your-network:
+#     external: true
