@@ -109,9 +109,15 @@ class QdrantConnector:
         assert collection_name is not None
 
         try:
+            # Try to parse as integer first (for collections with integer IDs)
+            try:
+                parsed_id = int(point_id)
+            except ValueError:
+                parsed_id = point_id  # Keep as string (UUID)
+
             result = await self._client.retrieve(
                 collection_name=collection_name,
-                ids=[point_id],
+                ids=[parsed_id],
                 with_payload=True,
                 with_vectors=False,
             )
@@ -122,7 +128,7 @@ class QdrantConnector:
             point = result[0]
             return Entry(
                 id=str(point.id),
-                content=point.payload.get("document", ""),
+                content=point.payload.get("page_content") or point.payload.get("document", ""),
                 metadata=point.payload.get(METADATA_PATH, {}),
             )
         except Exception as e:
